@@ -1,5 +1,5 @@
 import type { AIMode } from "../types";
-import { callAITutor, firebaseReady, getAIIdToken } from "./firebase";
+import { callAITutor, getAIIdToken } from "./firebase";
 
 interface AIRequest {
   mode: AIMode;
@@ -32,25 +32,14 @@ function hodReport({ category, date, consensus, question }: AIRequest) {
 }
 
 export async function askAI(request: AIRequest): Promise<string> {
-  // Local dev: Vite exposes a server-side Groq endpoint when GROQ_API_KEY is set.
-  if (import.meta.env.DEV) {
-    const data = await callAITutor(request).catch(() => null) as
-      | { text?: string; error?: string; available?: boolean }
-      | null;
-    if (data?.text?.trim()) return data.text.trim();
-    if (data?.error && data.available !== false) throw new Error(data.error);
-  }
-
-  // Deployed app: call the authenticated, secured Groq Cloud Function.
-  if (firebaseReady) {
-    const idToken = await getAIIdToken();
-    if (idToken) {
-      const data = (await callAITutor(request, idToken)) as { text?: string; error?: string };
-      const text = data.text?.trim() || "";
-      if (!text) throw new Error(data.error || "AI returned an empty answer.");
-      return text;
-    }
-  }
+  // Same path in local dev (Vite middleware), Vercel (serverless function),
+  // and Firebase Hosting (Cloud Function). Firebase ID token is sent when available.
+  const idToken = await getAIIdToken();
+  const data = await callAITutor(request, idToken).catch(() => null) as
+    | { text?: string; error?: string; available?: boolean }
+    | null;
+  if (data?.text?.trim()) return data.text.trim();
+  if (data?.error && data.available !== false) throw new Error(data.error);
 
   // Mock-first fallback keeps the prototype usable with no credentials.
   await delay(750);

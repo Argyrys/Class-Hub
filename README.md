@@ -2,6 +2,11 @@
 
 Mock-first Progressive Web App prototype for an MCA class.
 
+## Live deployment
+
+- Vercel: https://class-hub-peach.vercel.app
+- GitHub: https://github.com/Argyrys/Class-Hub
+
 ## Run locally
 
 ```bash
@@ -36,11 +41,13 @@ Timetable source: `src/data/timetable.ts`; CR overrides live in `db.timetable`.
 
 ## AI tutor
 
-- The deployed app uses **Groq** with the `openai/gpt-oss-20b` model through the `aiTutor` Cloud Function.
-- The `GROQ_API_KEY` is stored as a Firebase Functions secret and is never exposed to the browser.
+- The deployed app uses **Groq** with the `openai/gpt-oss-20b` model through a serverless function at `/api/ai-tutor`.
+- On Vercel this is `api/ai-tutor.ts`; on Firebase Hosting it is the `aiTutor` Cloud Function.
+- The `GROQ_API_KEY` is stored server-side and is never exposed to the browser.
 - There is **no 20/day app-level cap**. Groq's own free-tier limits currently allow roughly 30 requests/minute and 1,000 requests/day, so only extreme bulk use will hit a provider rate limit.
-- When Firebase Auth is configured and a user is signed in, `askAI` calls the Cloud Function. The mock-first local demo falls back to instant templates.
-- For **real Groq answers during local development**, copy `.env.example` to `.env.local`, set `GROQ_API_KEY=...`, and restart `npm run dev`. Vite runs a dev-only server middleware at `/api/ai-tutor`, so the key is never exposed to the browser.
+- A Firebase ID token is sent when Firebase Auth is available. If `FIREBASE_SERVICE_ACCOUNT` is configured on the server, the endpoint verifies it and keeps HOD reports CR-only.
+- When no key is configured, `askAI` falls back to instant templates so the mock-first prototype still works.
+- For **real Groq answers during local development**, copy `.env.example` to `.env.local`, set `GROQ_API_KEY=...`, and restart `npm run dev`.
 
 ## What is mocked
 
@@ -48,6 +55,26 @@ Timetable source: `src/data/timetable.ts`; CR overrides live in `db.timetable`.
 - Data persists in the browser under `mca-batch-hub-v1`.
 - Offline AI responses are generated locally with realistic templates.
 - The Firebase Cloud Function source is in `functions/index.ts` and is ready for a real Groq key.
+
+## Deploy to Vercel
+
+Import the GitHub repo into Vercel. It uses `vercel.json` with the Vite preset:
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- SPA fallback: `vercel.json`
+- Serverless AI route: `api/ai-tutor.ts`
+
+Optional environment variables in **Vercel → Project → Settings → Environment Variables**:
+
+| Variable | Purpose |
+| --- | --- |
+| `GROQ_API_KEY` | Enables real Groq answers instead of mock templates |
+| `VITE_FIREBASE_*` | Firebase web config, Auth, Firestore and Messaging |
+| `FIREBASE_SERVICE_ACCOUNT` | Full service-account JSON; when set, the AI route requires a Firebase ID token |
+| `VITE_FIREBASE_VAPID_KEY` | FCM browser token |
+
+After adding variables, redeploy so they are picked up.
 
 ## Going live
 

@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { GROQ_MODEL, SYSTEM_PROMPT, promptFor, type AIRequest } from "./functions/prompt";
 
 // Dev-only Groq endpoint. The key is read by Node/Vite and never shipped to the browser.
-// Production uses the authenticated Firebase Cloud Function at the same path.
+// Production uses the Vercel serverless function or Firebase Cloud Function at the same path.
 function groqDevApi(apiKey: string): Plugin {
   return {
     name: "groq-dev-api",

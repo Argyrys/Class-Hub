@@ -2,6 +2,7 @@ node_modules/
 dist/
 functions/lib/
 .firebase/
+.vercel/
 firebase-debug.log
 *.log
 
